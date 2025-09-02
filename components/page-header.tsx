@@ -1,18 +1,23 @@
 import Image from "next/image"
 import GrungeBackground from "@/components/grunge-background"
 
-export default function PageHeader({ title, subtitle, backgroundImage, backgroundQuery }) {
+interface PageHeaderProps {
+  title: string
+  subtitle: string
+  backgroundImage?: string
+}
+
+export default function PageHeader({ title, subtitle, backgroundImage }: PageHeaderProps) {
   return (
     <section className="relative flex h-[40vh] min-h-[300px] items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <Image
-          src={backgroundImage || "/placeholder.svg"}
+          src={backgroundImage || "/images/boxing-class-default.png"}
           alt={title}
           fill
           priority
           className="object-cover brightness-50"
           quality={100}
-          query={backgroundQuery}
         />
         <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
         <GrungeBackground className="opacity-30" />

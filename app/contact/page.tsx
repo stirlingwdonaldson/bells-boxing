@@ -1,76 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, Mail, MapPin, Phone, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import GrungeBackground from "@/components/grunge-background"
-import PageHeader from "@/components/page-header"
-import { submitContactForm } from "@/app/actions/contact"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import GrungeBackground from "@/components/grunge-background";
+import PageHeader from "@/components/page-header";
+import { toast } from "@/hooks/use-toast";
 
 export default function ContactPage() {
-  const [formState, setFormState] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  })
-  const [isPending, setIsPending] = useState(false)
-  const [formResult, setFormResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormState((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSelectChange = (value) => {
-    setFormState((prev) => ({ ...prev, subject: value }))
-  }
-
-  // Reset form after successful submission
-  const resetForm = () => {
-    setFormState({
-      name: "",
-      email: "",
-      phone: "",
-      subject: "",
-      message: "",
-    })
-  }
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsPending(true)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      // Create a new FormData object from the form element
-      const formData = new FormData(e.target)
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, phone, subject, message }),
+      });
 
-      // Log the form data to verify it's being created correctly
-      console.log("Form data entries:", [...formData.entries()])
-
-      // Call the server action directly
-      const result = await submitContactForm(formData)
-
-      setFormResult(result)
-
-      if (result.success) {
-        resetForm()
+      if (response.ok) {
+        toast({ title: "Success!", description: "Your message has been sent." });
+        // Reset form
+        setName('');
+        setEmail('');
+        setPhone('');
+        setSubject('');
+        setMessage('');
+      } else {
+        throw new Error('Failed to send message');
       }
     } catch (error) {
-      console.error("Error submitting form:", error)
-      setFormResult({
-        success: false,
-        message: "An error occurred while submitting the form. Please try again.",
-      })
+      toast({ title: "Error", description: "Failed to send message. Please try again later.", variant: "destructive" });
     } finally {
-      setIsPending(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <main className="min-h-screen bg-zinc-900 text-zinc-100">
@@ -82,145 +59,64 @@ export default function ContactPage() {
       <section className="relative py-16">
         <GrungeBackground className="opacity-10" />
         <div className="container mx-auto px-4">
-          <div className="grid gap-12 md:grid-cols-2">
-            <div>
-              <h2 className="relative mb-6 inline-block font-display text-3xl font-bold uppercase tracking-tight text-white md:text-4xl">
-                GET IN <span className="text-red-500">TOUCH</span>
-                <div className="absolute -bottom-2 left-0 h-1 w-full bg-red-500"></div>
-              </h2>
-              <p className="mb-8 text-lg text-zinc-300">
-                Have questions about our classes, memberships, or facilities? Fill out the form and our team will get
-                back to you within 24 hours.
-              </p>
-
-              {formResult?.success ? (
-                <div className="rounded-lg border border-green-500 bg-green-500/10 p-6">
-                  <div className="mb-4 flex items-center">
-                    <CheckCircle className="mr-2 h-6 w-6 text-green-500" />
-                    <h3 className="text-xl font-bold text-white">Message Sent!</h3>
-                  </div>
-                  <p className="mb-4 text-zinc-200">{formResult.message}</p>
-                  <Button
-                    onClick={() => {
-                      setFormResult(null)
-                    }}
-                    className="bg-green-600 text-white hover:bg-green-700"
-                  >
-                    Send Another Message
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {formResult?.success === false && (
-                    <div className="rounded-lg border border-red-500 bg-red-500/10 p-4">
-                      <div className="flex items-center">
-                        <AlertCircle className="mr-2 h-5 w-5 text-red-500" />
-                        <p className="text-red-400">{formResult.message || "An error occurred. Please try again."}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium text-zinc-300">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formState.name}
-                        onChange={handleChange}
-                        required
-                        className="border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500 focus:border-red-500"
-                        placeholder="John Doe"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium text-zinc-300">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formState.email}
-                        onChange={handleChange}
-                        required
-                        className="border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500 focus:border-red-500"
-                        placeholder="john@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="phone" className="text-sm font-medium text-zinc-300">
-                        Phone Number (Optional)
-                      </label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formState.phone}
-                        onChange={handleChange}
-                        className="border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500 focus:border-red-500"
-                        placeholder="(123) 456-7890"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="subject" className="text-sm font-medium text-zinc-300">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input type="hidden" name="subject" value={formState.subject} />
-                      <Select value={formState.subject} onValueChange={handleSelectChange} required>
-                        <SelectTrigger className="border-zinc-700 bg-zinc-800/50 text-white focus:border-red-500">
-                          <SelectValue placeholder="Select a subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="membership">Membership Inquiry</SelectItem>
-                          <SelectItem value="classes">Class Information</SelectItem>
-                          <SelectItem value="training">Personal Training</SelectItem>
-                          <SelectItem value="facilities">Facility Questions</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="message" className="text-sm font-medium text-zinc-300">
-                      Message <span className="text-red-500">*</span>
-                    </label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      value={formState.message}
-                      onChange={handleChange}
-                      required
-                      className="min-h-[150px] border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500 focus:border-red-500"
-                      placeholder="Tell us how we can help you..."
-                    />
-                  </div>
-
-                  <Button type="submit" disabled={isPending} className="w-full bg-red-600 text-white hover:bg-red-700">
-                    {isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      "Send Message"
-                    )}
-                  </Button>
-                </form>
-              )}
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+            <div className="space-y-8">
+              <h2 className="text-3xl font-bold uppercase tracking-wider text-red-500">Send us a message</h2>
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <Input
+                  name="name"
+                  placeholder="Your Name"
+                  className="bg-zinc-800 border-zinc-700 placeholder:text-zinc-500"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="Your Email"
+                  className="bg-zinc-800 border-zinc-700 placeholder:text-zinc-500"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <Input
+                  name="phone"
+                  placeholder="Your Phone (Optional)"
+                  className="bg-zinc-800 border-zinc-700 placeholder:text-zinc-500"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <Select name="subject" required value={subject} onValueChange={setSubject}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-100">
+                    <SelectValue placeholder="Reason for contacting" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-100">
+                    <SelectItem value="general-inquiry">General Inquiry</SelectItem>
+                    <SelectItem value="memberships">Memberships</SelectItem>
+                    <SelectItem value="training">Personal Training</SelectItem>
+                    <SelectItem value="feedback">Feedback</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Textarea
+                  name="message"
+                  placeholder="Your Message"
+                  className="bg-zinc-800 border-zinc-700 placeholder:text-zinc-500"
+                  rows={5}
+                  required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </Button>
+              </form>
             </div>
 
             <div className="space-y-8">
               <div className="rounded-lg bg-zinc-800/30 p-6 backdrop-blur-sm">
                 <h3 className="mb-4 text-xl font-bold">Contact Information</h3>
                 <div className="space-y-4">
-                  {/* Address */}
                   <div className="flex items-start">
                     <MapPin className="mr-3 h-5 w-5 shrink-0 text-red-500" />
                     <div>
@@ -229,8 +125,6 @@ export default function ContactPage() {
                       <p className="text-zinc-400">South Geelong VIC 3220</p>
                     </div>
                   </div>
-
-                  {/* Phone */}
                   <div className="flex items-start">
                     <Phone className="mr-3 h-5 w-5 shrink-0 text-red-500" />
                     <div>
@@ -238,8 +132,6 @@ export default function ContactPage() {
                       <p className="text-zinc-400">0 407 581 872</p>
                     </div>
                   </div>
-
-                  {/* Email */}
                   <div className="flex items-start">
                     <Mail className="mr-3 h-5 w-5 shrink-0 text-red-500" />
                     <div>
@@ -247,8 +139,6 @@ export default function ContactPage() {
                       <p className="text-zinc-400">greg@bellsboxing.com</p>
                     </div>
                   </div>
-
-                  {/* Hours */}
                   <div className="flex items-start">
                     <Clock className="mr-3 h-5 w-5 shrink-0 text-red-500" />
                     <div>

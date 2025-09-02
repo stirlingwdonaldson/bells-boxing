@@ -6,9 +6,11 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
+import { useMounted } from "@/hooks/use-mounted"
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const isMounted = useMounted()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,10 +21,12 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const headerClasses = `fixed top-0 z-50 w-full transition-all duration-300 ${
+    isMounted && isScrolled ? "bg-zinc-900/90 backdrop-blur-md" : "bg-transparent"
+  }`
+
   return (
-    <header
-      className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? "bg-zinc-900/90 backdrop-blur-md" : "bg-transparent"}`}
-    >
+    <header className={headerClasses}>
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
         <Link href="/" className="flex items-center">
           <Image
@@ -46,30 +50,37 @@ export default function Header() {
           </Button>
         </div>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-zinc-900 text-zinc-100">
-            <div className="mt-8 flex flex-col space-y-4">
-              <MobileNavLink href="/">Home</MobileNavLink>
-              <MobileNavLink href="/schedule">Schedule</MobileNavLink>
-              <MobileNavLink href="/contact">Contact</MobileNavLink>
-              <Button asChild className="mt-4 bg-red-600 text-white hover:bg-red-700">
-                <Link href="/contact">FREE CLASS</Link>
+        {isMounted && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open menu</span>
               </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-zinc-900 text-zinc-100">
+              <div className="mt-8 flex flex-col space-y-4">
+                <MobileNavLink href="/">Home</MobileNavLink>
+                <MobileNavLink href="/schedule">Schedule</MobileNavLink>
+                <MobileNavLink href="/contact">Contact</MobileNavLink>
+                <Button asChild className="mt-4 bg-red-600 text-white hover:bg-red-700">
+                  <Link href="/contact">FREE CLASS</Link>
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
       </div>
     </header>
   )
 }
 
-function NavLink({ href, children }) {
+interface NavLinkProps {
+  href: string
+  children: React.ReactNode
+}
+
+function NavLink({ href, children }: NavLinkProps) {
   return (
     <Link
       href={href}
@@ -86,7 +97,7 @@ function NavLink({ href, children }) {
   )
 }
 
-function MobileNavLink({ href, children }) {
+function MobileNavLink({ href, children }: NavLinkProps) {
   return (
     <Link
       href={href}
